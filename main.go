@@ -9,8 +9,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
 
-// FIXME: разобраться с dist
-// //go:embed all:frontend/dist
+//go:embed frontend/dist
 var assets embed.FS
 
 func main() {

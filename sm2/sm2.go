@@ -15,11 +15,12 @@ type SM2Result struct {
 
 func Calculate(easeFactor float64, interval int, repetitions int, grade int) *SM2Result {
 	if grade >= 3 {
-		if repetitions == 0 {
+		switch repetitions {
+		case 0:
 			interval = 1
-		} else if repetitions == 1 {
+		case 1:
 			interval = 6
-		} else {
+		default:
 			interval = int(math.Round(float64(interval) * easeFactor))
 		}
 		repetitions++
@@ -28,7 +29,7 @@ func Calculate(easeFactor float64, interval int, repetitions int, grade int) *SM
 		interval = 1
 	}
 
-	easeFactor = easeFactor + (0.1 - (5 - float64(grade))*(0.08+(5-float64(grade))*0.02))
+	easeFactor = easeFactor + (0.1 - (5-float64(grade))*(0.08+(5-float64(grade))*0.02))
 	if easeFactor < 1.3 {
 		easeFactor = 1.3
 	}
@@ -54,8 +55,10 @@ func Reset() *SM2Result {
 }
 
 func ValidateGrade(grade int) error {
-	if grade != 0 && grade != 3 && grade != 4 && grade != 5 {
+	switch grade {
+	case 0, 3, 4, 5:
+		return nil
+	default:
 		return fmt.Errorf("invalid grade: %d, must be 0, 3, 4, or 5", grade)
 	}
-	return nil
 }
