@@ -44,8 +44,8 @@
           <div v-if="activePopover === 'interval'" class="legend-popover" @mouseenter="clearPopoverTimer"
             @mouseleave="onLeavePopover">
             <strong class="popover-title">Интервальное повторение</strong>
-            <p class="popover-desc">Алгоритм SM-2 анализирует ваши оценки и показывает карточки именно тогда, когда вы
-              вот-вот их забудете. Максимальная эффективность запоминания.</p>
+            <p class="popover-desc">Умная система SM-2 следит за твоими успехами и подсовывает карточки ровно в тот
+              момент, когда ты начинаешь их забывать.</p>
           </div>
         </Transition>
       </div>
@@ -61,8 +61,8 @@
           <div v-if="activePopover === 'free'" class="legend-popover" @mouseenter="clearPopoverTimer"
             @mouseleave="onLeavePopover">
             <strong class="popover-title">Свободный режим</strong>
-            <p class="popover-desc">Листайте карточки в своём темпе, без оценок и таймеров. Идеально для первого
-              знакомства с новым материалом или быстрого повторения.</p>
+            <p class="popover-desc">Свободный темп + автовоспроизведение по желанию. Можно включить карточки как фоновую
+              "ленту" и запоминать пассивно.</p>
           </div>
         </Transition>
       </div>
@@ -476,9 +476,8 @@ const toggleSelectAll = () => {
 /* Popover card — справа от уголка */
 .legend-popover {
   position: absolute;
-  bottom: calc(100% + 8px);
-  left: calc(100% + 10px);
-  width: 280px;
+  bottom: calc(100% + 20px);
+  width: auto;
   background: #1a1a1a;
   border: 1px solid #333333;
   border-radius: 0.75rem;
