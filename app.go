@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
+
 	"github.com/MindlessMuse666/yappari/db"
+	"github.com/MindlessMuse666/yappari/tts"
 )
 
 type App struct {
@@ -78,5 +81,21 @@ func (a *App) CheckVoicesAvailability() db.VoiceStatus {
 	return db.VoiceStatus{
 		Ja: true,
 		Ru: true,
+	}
+}
+
+func (a *App) SpeakText(text string, lang string) (string, error) {
+	data, err := tts.Speak(text, lang)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(data), nil
+}
+
+func (a *App) CheckEdgeTTSAvailability() map[string]any {
+	ok, msg := tts.CheckAvailability()
+	return map[string]any{
+		"available": ok,
+		"message":   msg,
 	}
 }

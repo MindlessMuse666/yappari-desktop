@@ -661,6 +661,33 @@ export function useWails() {
     return { Ja: true, Ru: true }
   }
 
+  const speakText = async (text: string, lang: string): Promise<string> => {
+    if (isWails) {
+      return window.go!.main.App.SpeakText(text, lang)
+    }
+    // Web Speech API fallback для разработки без Wails
+    return new Promise((resolve) => {
+      if (!window.speechSynthesis) {
+        console.warn('Web Speech API недоступен')
+        resolve('')
+        return
+      }
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = lang
+      utterance.rate = 0.9
+      utterance.onend = () => resolve('')
+      utterance.onerror = () => resolve('')
+      window.speechSynthesis.speak(utterance)
+    })
+  }
+
+  const checkEdgeTTS = async (): Promise<{ available: boolean; message: string }> => {
+    if (isWails) {
+      return window.go!.main.App.CheckEdgeTTSAvailability()
+    }
+    return { available: false, message: 'Режим разработки (без Wails)' }
+  }
+
   return {
     isWails,
     getDecks,
@@ -676,5 +703,7 @@ export function useWails() {
     resetCardProgress,
     resetDeckProgress,
     checkVoicesAvailability,
+    speakText,
+    checkEdgeTTS,
   }
 }

@@ -56,6 +56,8 @@ declare global {
           ResetCardProgress: (cardId: number) => Promise<void>
           ResetDeckProgress: (deckId: number) => Promise<void>
           CheckVoicesAvailability: () => Promise<VoiceStatus>
+          SpeakText: (text: string, lang: string) => Promise<string>
+          CheckEdgeTTSAvailability: () => Promise<{ available: boolean; message: string }>
         }
       }
     }

@@ -109,7 +109,7 @@ const mode = computed(() => {
   return m || 'interval'
 })
 const deckIds = (route.query.deckIds as string).split(',').map(Number)
-const { getTrainingCards, submitReview: submitReviewWails } = useWails()
+const { isWails, getTrainingCards, submitReview: submitReviewWails, speakText, checkEdgeTTS } = useWails()
 
 const modeLabel = computed(() => {
   const labels: Record<string, string> = {
@@ -134,26 +134,79 @@ const isAutoPlaying = ref(false)
 let lazyTimer: number | null = null
 let answerTimer: number | null = null
 
-// Голосовые функции
-let voices: SpeechSynthesisVoice[] = []
-let voicesLoaded = false
+// Голосовые функции (edge-tts через Go backend, Web Speech API fallback в dev)
+const playAudio = (base64: string): Promise<void> => {
+  if (!base64) return Promise.resolve() // Web Speech API fallback уже воспроизвёл
+  return new Promise((resolve) => {
+    const audio = new Audio('data:audio/mp3;base64,' + base64)
+    audio.onended = () => resolve()
+    audio.onerror = () => resolve()
+    audio.play().catch(() => resolve())
+  })
+}
 
-const loadVoices = () => {
-  voices = window.speechSynthesis.getVoices()
-  voicesLoaded = voices.length > 0
+const speakJapanese = async () => {
+  if (!currentCard.value) return
+  try {
+    const audio = await speakText(currentCard.value.KanjiText, 'ja-JP')
+    await playAudio(audio)
+  } catch (e) {
+    console.error('Ошибка озвучки (ja):', e)
+    if (isWails) {
+      await alert({ title: 'Ошибка озвучки', message: 'Не удалось воспроизвести японскую озвучку. Убедитесь, что установлен edge-tts (pip install edge-tts).' })
+    }
+  }
+}
+
+const speakRussian = async () => {
+  if (!currentCard.value) return
+  try {
+    const audio = await speakText(currentCard.value.Translation, 'ru-RU')
+    await playAudio(audio)
+  } catch (e) {
+    console.error('Ошибка озвучки (ru):', e)
+    if (isWails) {
+      await alert({ title: 'Ошибка озвучки', message: 'Не удалось воспроизвести русскую озвучку. Убедитесь, что установлен edge-tts (pip install edge-tts).' })
+    }
+  }
+}
+
+const speak = async () => {
+  if (!currentCard.value) return
+  try {
+    const audioJa = await speakText(currentCard.value.KanjiText, 'ja-JP')
+    await playAudio(audioJa)
+
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    if (!currentCard.value) return
+    const audioRu = await speakText(currentCard.value.Translation, 'ru-RU')
+    await playAudio(audioRu)
+  } catch (e) {
+    console.error('Ошибка озвучки:', e)
+    if (isWails) {
+      await alert({ title: 'Ошибка озвучки', message: 'Не удалось воспроизвести озвучку. Убедитесь, что установлен edge-tts (pip install edge-tts).' })
+    }
+  }
 }
 
 onMounted(async () => {
-  loadVoices()
-  window.speechSynthesis.addEventListener('voiceschanged', loadVoices)
-
   await loadCards()
+  // Проверяем доступность TTS в Wails-режиме
+  if (isWails) {
+    try {
+      const ttsStatus = await checkEdgeTTS()
+      if (!ttsStatus.available) {
+        console.warn('edge-tts недоступен:', ttsStatus.message)
+      }
+    } catch {
+      // игнорируем ошибку проверки
+    }
+  }
 })
 
 onUnmounted(() => {
-  window.speechSynthesis.removeEventListener('voiceschanged', loadVoices)
   stopAutoPlay()
-  window.speechSynthesis.cancel()
 })
 
 const loadCards = async () => {
@@ -169,77 +222,7 @@ const loadCards = async () => {
 
 const goBack = () => {
   stopAutoPlay()
-  window.speechSynthesis.cancel()
   router.push({ name: 'Home' })
-}
-
-const getVoice = (lang: string): SpeechSynthesisVoice | null => {
-  if (!voicesLoaded) {
-    loadVoices()
-  }
-
-  // Сначала ищем точное соответствие
-  let voice = voices.find((v) => v.lang === lang)
-  if (voice) return voice
-
-  // Потом ищем по началу кода языка
-  voice = voices.find((v) => v.lang.startsWith(lang.split('-')[0]))
-  return voice || null
-}
-
-const speakJapanese = () => {
-  if (!currentCard.value) return
-  window.speechSynthesis.cancel()
-
-  const utterance = new SpeechSynthesisUtterance(currentCard.value.KanjiText)
-  utterance.lang = 'ja-JP'
-  const voice = getVoice('ja-JP')
-  if (voice) {
-    utterance.voice = voice
-  }
-  utterance.rate = 0.9
-  window.speechSynthesis.speak(utterance)
-}
-
-const speakRussian = () => {
-  if (!currentCard.value) return
-  window.speechSynthesis.cancel()
-
-  const utterance = new SpeechSynthesisUtterance(currentCard.value.Translation)
-  utterance.lang = 'ru-RU'
-  const voice = getVoice('ru-RU')
-  if (voice) {
-    utterance.voice = voice
-  }
-  utterance.rate = 0.9
-  window.speechSynthesis.speak(utterance)
-}
-
-const speak = () => {
-  if (!currentCard.value) return
-  window.speechSynthesis.cancel()
-
-  const uttr1 = new SpeechSynthesisUtterance(currentCard.value.KanjiText)
-  uttr1.lang = 'ja-JP'
-  const jaVoice = getVoice('ja-JP')
-  if (jaVoice) {
-    uttr1.voice = jaVoice
-  }
-  uttr1.rate = 0.9
-
-  window.speechSynthesis.speak(uttr1)
-
-  setTimeout(() => {
-    if (!currentCard.value) return
-    const uttr2 = new SpeechSynthesisUtterance(currentCard.value.Translation)
-    uttr2.lang = 'ru-RU'
-    const ruVoice = getVoice('ru-RU')
-    if (ruVoice) {
-      uttr2.voice = ruVoice
-    }
-    uttr2.rate = 0.9
-    window.speechSynthesis.speak(uttr2)
-  }, 500)
 }
 
 const showAnswerFn = () => {
@@ -260,7 +243,6 @@ const submitReview = async (grade: number) => {
 }
 
 const nextCard = () => {
-  window.speechSynthesis.cancel()
   // First hide the answer
   showAnswer.value = false
   // Wait a tiny bit for the animation to start, then update index
@@ -318,7 +300,6 @@ const stopAutoPlay = () => {
     clearTimeout(answerTimer)
     answerTimer = null
   }
-  window.speechSynthesis.cancel()
 }
 
 const processAutoPlayStep = () => {
@@ -548,12 +529,12 @@ watch(currentIndex, () => {
   width: 100%;
 }
 
-.action-buttons > * {
+.action-buttons>* {
   flex: 1;
   min-width: 120px;
 }
 
-.free-mode-buttons > * {
+.free-mode-buttons>* {
   flex: 1;
   min-width: 150px;
 }

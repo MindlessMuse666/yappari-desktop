@@ -1,71 +1,23 @@
 <template>
-  <span class="furigana-text" :data-language="Language" @click="speak">
+  <span class="furigana-text" :data-language="Language">
     <span class="main-text">{{ displayText }}</span>
     <span v-if="FuriganaText && FuriganaText !== KanjiText" class="furigana">【{{ FuriganaText }}】</span>
   </span>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed } from 'vue'
 
-interface Props {
+const props = withDefaults(defineProps<{
   KanjiText: string
   FuriganaText?: string | null
   Language?: 'ja' | 'ru'
-}
-
-const props = withDefaults(defineProps<Props>(), {
+}>(), {
   FuriganaText: null,
   Language: 'ja',
 })
 
 const displayText = computed(() => props.KanjiText)
-const voices = ref<SpeechSynthesisVoice[]>([])
-const voicesLoaded = ref(false)
-
-const loadVoices = () => {
-  voices.value = window.speechSynthesis.getVoices()
-  voicesLoaded.value = voices.value.length > 0
-}
-
-onMounted(() => {
-  loadVoices()
-  window.speechSynthesis.addEventListener('voiceschanged', loadVoices)
-})
-
-onUnmounted(() => {
-  window.speechSynthesis.removeEventListener('voiceschanged', loadVoices)
-})
-
-const speak = () => {
-  if (!('speechSynthesis' in window)) {
-    console.warn('Speech synthesis not supported')
-    return
-  }
-
-  const text = props.KanjiText
-  if (!text) return
-
-  window.speechSynthesis.cancel()
-  const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = props.Language === 'ja' ? 'ja-JP' : 'ru-RU'
-
-  // Try to find appropriate voice
-  if (!voicesLoaded.value) {
-    loadVoices()
-  }
-  const targetLang = props.Language === 'ja' ? 'ja' : 'ru'
-  let matchingVoice = voices.value.find(v => v.lang === utterance.lang)
-  if (!matchingVoice) {
-    matchingVoice = voices.value.find(v => v.lang.startsWith(targetLang))
-  }
-  if (matchingVoice) {
-    utterance.voice = matchingVoice
-  }
-
-  utterance.rate = 0.9
-  window.speechSynthesis.speak(utterance)
-}
 </script>
 
 <style scoped>
