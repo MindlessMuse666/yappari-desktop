@@ -7,6 +7,7 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 //go:embed frontend/dist
@@ -17,13 +18,20 @@ func main() {
 
 	err := wails.Run(&options.App{
 		Title:  "Yappari",
-		Width:  1024,
-		Height: 768,
+		Width:  1280,
+		Height: 800,
+		Fullscreen: false,
+		WindowStartState: options.Maximised,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
 		OnStartup:  app.startup,
 		OnShutdown: app.shutdown,
+		Windows: &windows.Options{
+			WebviewIsTransparent: false,
+			WindowIsTranslucent:  false,
+			DisableWindowIcon:    false,
+		},
 	})
 
 	if err != nil {

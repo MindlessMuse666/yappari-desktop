@@ -1,3 +1,52 @@
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/Inter-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/Inter-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/Inter-SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter/Inter-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans JP';
+  src: url('/fonts/noto_sans_jp/NotoSansJP-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans JP';
+  src: url('/fonts/noto_sans_jp/NotoSansJP-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans JP';
+  src: url('/fonts/noto_sans_jp/NotoSansJP-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -5,10 +54,33 @@
 }
 
 body {
-  font-family: 'Segoe UI', 'Meiryo', 'Yu Gothic', sans-serif;
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
   background-color: #000000;
   color: #ffffff;
   min-height: 100vh;
+}
+
+/* Отключаем выделение для интерфейсных элементов */
+button,
+h1, h2, h3, h4, h5, h6,
+label,
+img {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Разрешаем выделение для вводимого текста */
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+::selection {
+  background-color: #ff0a14;
+  color: #ffffff;
 }
 
 #app {
@@ -25,11 +97,11 @@ button {
   cursor: pointer;
   font-family: inherit;
   font-size: 1rem;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
 }
 
 button:hover {
-  opacity: 0.9;
+  background-color: #e00912;
 }
 
 button:disabled {
@@ -70,6 +142,10 @@ ruby rt {
 .p-button {
   background-color: #ff0a14 !important;
   border: none !important;
+}
+
+.p-button:hover {
+  background-color: #e00912 !important;
 }
 
 .p-dialog {

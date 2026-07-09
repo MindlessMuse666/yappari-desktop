@@ -1,5 +1,5 @@
 <template>
-  <span v-html="rendered"></span>
+  <span v-html="rendered" class="furigana-text"></span>
 </template>
 
 <script setup lang="ts">
@@ -48,3 +48,30 @@ const rendered = computed(() => {
   return result
 })
 </script>
+
+<style scoped>
+.furigana-text {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  cursor: default;
+}
+
+.furigana-text :deep(ruby) {
+  display: inline-block;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.furigana-text :deep(rt) {
+  display: block;
+  font-size: 0.5em;
+  color: #c7cdd8;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+</style>
