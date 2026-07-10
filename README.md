@@ -7,7 +7,7 @@
    <a href="https://vuejs.org"><img src="https://img.shields.io/badge/Vue.js-3.5-4FC08D?style=for-the-badge&logo=vuedotjs" alt="Vue.js" height="35"></a>
    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript" height="35"></a>
    <a href="https://www.sqlite.org/"><img src="https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite" alt="SQLite" height="35"></a>
-   <a href="https://github.com/MindlessMuse666/yappari/blob/main/LICENSE"><img src="https://img.shields.io/badge/AGPLv3-yellow?style=for-the-badge&logo=readme&logoColor=white" alt="AGPL v3" height="35"></a>
+   <a href="https://github.com/MindlessMuse666/yappari/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/AGPLv3-yellow?style=for-the-badge&logo=readme&logoColor=white" alt="AGPL v3" height="35"></a>
    <a href="https://www.microsoft.com/windows"><img src="https://img.shields.io/badge/Windows%2011-0078D4?style=for-the-badge&logo=windows" alt="Windows 11" height="35"></a>
 </div>
 
@@ -19,7 +19,7 @@
 
 Проект родился из желания иметь лёгкое, быстрое и красивое приложение для себя и своих близких, чтобы удобно заучивать японскую лексику.
 
-> **Статус:** MVP завершён, версия 0.1! 🚀
+> **Статус:** Версия v1.0 — стабильный релиз 🚀
 
 <details open>
    <summary><b>Нажмите, чтобы скрыть/показать скриншоты</b></summary>
@@ -55,7 +55,7 @@
 | 🧠 **SM-2** | Классический алгоритм интервального повторения с ручной оценкой |
 | 🗂️ **Колоды** | Создавай, редактируй и удаляй тематические наборы карточек |
 | 🃏 **Карточки** | Японское слово + чтение каной + русский перевод |
-| 🔊 **Озвучка** | Речь через Microsoft Edge TTS (Nanami & Svetlana) |
+| 🔊 **Озвучка** | Три уровня fallback: edge-tts (Python) -> Windows TTS (System.Speech) -> резервный Web Speech API |
 | 🔄 **3D Flip** | Карточка переворачивается с анимацией — сперва слово, потом ответ |
 | 🎲 **Свободный режим** | Листай карточки без расписания. Есть автовоспроизведение! |
 | 🎉 **Конфетти** | Праздничная анимация после каждой завершённой тренировки |
@@ -69,7 +69,7 @@
 
 - **Go 1.25+** — бизнес-логика, SM-2, IPC с WebView2
 - **SQLite** (via `modernc.org/sqlite` — без CGO!)
-- **edge-tts** — Microsoft Edge TTS для синтеза речи
+- **edge-tts** / **Windows TTS** — синтез речи (MP3 через Python edge-tts или WAV через System.Speech)
 
 ### Frontend
 
@@ -88,25 +88,27 @@
 
 ### Требования
 
-- Windows 11 (с WebView2 Runtime)
+- Windows 10/11 (с WebView2 Runtime)
 - Go 1.25+
 - Node.js 18+
-- Python 3.x + `edge-tts`
+- Python 3.x + `edge-tts` (опционально — для наилучшего качества озвучки)
+
+> **Озвучка без Python:** Если edge-tts не установлен, приложение автоматически использует встроенный Windows TTS (System.Speech). Для японского и русского языков потребуется установить соответствующий языковой пакет в настройках Windows.
 
 ### Шаги запуска
 
 ```bash
-# 1. Установи edge-tts (один раз)
-pip install edge-tts
-
-# 2. Склонируй репозиторий
+# 1. Склонируй репозиторий
 git clone https://github.com/MindlessMuse666/yappari.git
 cd yappari
 
-# 3. Установи зависимости фронтенда
+# 2. Установи зависимости фронтенда
 cd frontend
 npm install
 cd ..
+
+# 3. (Опционально) Установи edge-tts для лучшей озвучки
+pip install edge-tts
 
 # 4. Запусти в режиме разработки
 wails dev
@@ -130,14 +132,10 @@ wails build -clean -platform windows/amd64
 yappari/
 ├── main.go              # точка входа Wails
 ├── app.go               # IPC-методы
-├── db/                  # работа с SQLite
-│   ├── database.go      # инициализация и миграции
-│   ├── decks.go         # CRUD колод
-│   └── cards.go         # CRUD карточек + SM-2
-├── sm2/                 # алгоритм SM-2
-│   └── sm2.go
-├── tts/                 # edge-tts обёртка
-│   └── tts.go
+├── backend/
+│   ├── database/        # SQLite: модели, CRUD, миграции
+│   ├── sm2/             # алгоритм SM-2
+│   └── tts/             # edge-tts + Windows TTS обёртка
 ├── frontend/            # Vue.js приложение
 │   ├── src/
 │   │   ├── views/       # Home, DeckManage, Training
@@ -160,7 +158,7 @@ yappari/
 
 ## Лицензия
 
-Проект распространяется под лицензией [GNU AGPL v3](LICENSE).
+Проект распространяется под лицензией [GNU AGPL v3](LICENSE.md).
 
 ---
 
