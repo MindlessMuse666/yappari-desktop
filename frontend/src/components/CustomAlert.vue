@@ -23,10 +23,10 @@
             </button>
             <!-- Режим confirm: две кнопки -->
             <template v-else>
-              <button ref="mainBtn" @click="confirmAction(false)" class="alert-btn secondary">
+              <button @click="confirmAction(false)" class="alert-btn secondary">
                 {{ cancelText }}
               </button>
-              <button @click="confirmAction(true)" class="alert-btn primary">
+              <button ref="mainBtn" @click="confirmAction(true)" class="alert-btn primary">
                 {{ confirmText }}
               </button>
             </template>
@@ -122,11 +122,19 @@ const handleOverlayClick = () => {
   }
 }
 
-/** Обработчик клавиши Escape */
+/** Обработчик клавиш Escape и Enter */
 const onKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape' && visible.value) {
     if (mode.value === 'confirm') {
       confirmAction(false)
+    } else {
+      close()
+    }
+  }
+  if (e.key === 'Enter' && visible.value) {
+    e.preventDefault()
+    if (mode.value === 'confirm') {
+      confirmAction(true)
     } else {
       close()
     }
