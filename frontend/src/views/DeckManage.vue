@@ -71,6 +71,7 @@
             placeholder="Введите японское слово"
             class="custom-input"
             :class="{ 'input-error': errors.kanjiText }"
+            @keyup.enter="saveCard"
           />
           <div v-if="errors.kanjiText" class="error">{{ errors.kanjiText }}</div>
         </div>
@@ -81,6 +82,7 @@
             v-model="cardForm.FuriganaText"
             placeholder="Введите чтение"
             class="custom-input"
+            @keyup.enter="saveCard"
           />
         </div>
         <div class="input-group">
@@ -93,6 +95,7 @@
             placeholder="Введите перевод"
             class="custom-input"
             :class="{ 'input-error': errors.translation }"
+            @keyup.enter="saveCard"
           />
           <div v-if="errors.translation" class="error">{{ errors.translation }}</div>
         </div>
