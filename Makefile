@@ -8,7 +8,11 @@ dev:
 
 ## Собрать EXE для Windows (production)
 build:
-	wails build -clean -platform windows/amd64
+	wails build -clean -platform windows/amd64 -webview2 embed
+
+## Собрать EXE без WebView2-бутстраппера (экономит ~2MB, но требует WebView2 в системе)
+build-lean:
+	wails build -clean -platform windows/amd64 -webview2 download
 
 # === Тестирование ===
 
@@ -81,14 +85,19 @@ clean-all: clean
 
 # === Сборка для публикации ===
 
-## Собрать production EXE и подготовить архив для распространения
+## Собрать production EXE и показать информацию о сборке
 build-prod: test build
-	@echo "✅ Production-сборка готова: build/bin/yappari.exe"
-	@echo "📦 Размер:"
+	@echo "✅ Production-сборка готова!"
+	@echo "📦 Файл: build/bin/yappari.exe"
+	@echo "📏 Размер:"
+	@if exist build\bin\yappari.exe echo    $$(for %I in (build\bin\yappari.exe) do @echo %~zI bytes)
+	@echo "🚀 Распространяйте build/bin/yappari.exe как portable-версию"
 
 ## Собрать production EXE с NSIS-инсталлятором (требуется NSIS в PATH)
 build-installer: build-prod
 	@echo "🔧 Сборка инсталлятора через NSIS..."
 	@echo "   Установите NSIS: https://nsis.sourceforge.io/Download"
-	@echo "   Затем запустите: makensis installer.nsi"
-	@echo "   Или используйте готовый build/bin/yappari.exe как portable-версию"
+	@echo "   Затем: makensis installer.nsi"
+	@echo ""
+	@echo "   📌 Рекомендация: для первого релиза используйте portable EXE"
+	@echo "      Инсталлятор имеет смысл, когда появятся частые обновления"
