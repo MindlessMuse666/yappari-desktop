@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/MindlessMuse666/yappari/backend/database"
 	"github.com/MindlessMuse666/yappari/backend/tts"
@@ -20,16 +23,33 @@ func NewApp() *App {
 	return &App{}
 }
 
-// startup вызывается Wails при запуске приложения. Инициализирует базу данных.
+// startup вызывается Wails при запуске приложения. Инициализирует базу данных и TTS.
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	if err := database.InitDB(); err != nil {
 		panic(err)
 	}
+
+	// Инициализируем TTS (создаёт venv, загружает модели, запускает Python-сервер)
+	go func() {
+		appData, err := os.UserConfigDir()
+		if err != nil {
+			fmt.Printf("TTS: не удалось получить папку пользователя: %v\n", err)
+			return
+		}
+		appDataDir := filepath.Join(appData, "Yappari")
+		if err := tts.Init(appDataDir); err != nil {
+			fmt.Printf("TTS: ошибка инициализации: %v\n", err)
+		}
+	}()
 }
 
-// shutdown вызывается Wails при завершении приложения. Закрывает базу данных.
+// shutdown вызывается Wails при завершении приложения.
+// Закрывает TTS-процесс и базу данных.
 func (a *App) shutdown(ctx context.Context) {
+	if err := tts.Close(); err != nil {
+		fmt.Printf("TTS: ошибка завершения: %v\n", err)
+	}
 	if err := database.CloseDB(); err != nil {
 		panic(err)
 	}
@@ -102,22 +122,27 @@ func (a *App) ResetDeckProgress(deckID int) error {
 	return database.ResetDeckProgress(deckID)
 }
 
-// ---- Голоса (заглушка) ----
+// ---- Синтез речи ----
 
 // CheckVoicesAvailability проверяет доступность голосов для синтеза речи.
-// В текущей реализации всегда возвращает true для обоих языков.
+// Возвращает статус на основе TTS-системы.
 func (a *App) CheckVoicesAvailability() database.VoiceStatus {
+	s := tts.Status()
+	ja := false
+	ru := false
+	if s.State == tts.StateReady {
+		// Обе модели загружены — оба языка доступны
+		ja = true
+		ru = true
+	}
 	return database.VoiceStatus{
-		Ja: true,
-		Ru: true,
+		Ja: ja,
+		Ru: ru,
 	}
 }
 
-// ---- Синтез речи ----
-
-// SpeakText синтезирует речь через доступный TTS-движок.
-// Приоритет: edge-tts (MP3) → Windows TTS (WAV).
-// Возвращает карту с полями "audio" (base64) и "mime" (MIME-тип).
+// SpeakText синтезирует речь через встроенные TTS-модели (Silero / Kokoro).
+// Возвращает карту с полями "audio" (base64-WAV) и "mime" (MIME-тип).
 func (a *App) SpeakText(text string, lang string) (map[string]any, error) {
 	data, mimeType, err := tts.Speak(text, lang)
 	if err != nil {
@@ -129,13 +154,13 @@ func (a *App) SpeakText(text string, lang string) (map[string]any, error) {
 	}, nil
 }
 
-// CheckEdgeTTSAvailability проверяет доступность синтеза речи в системе.
-// Проверяет все доступные движки: edge-tts, Windows TTS.
-// Возвращает карту с полями "available" (bool) и "message" (string).
-func (a *App) CheckEdgeTTSAvailability() map[string]any {
-	ok, msg := tts.CheckAvailability()
+// CheckTTSAvailability проверяет доступность TTS в системе.
+// Возвращает карту с полями "available" (bool), "message" (string) и "status" (int).
+func (a *App) CheckTTSAvailability() map[string]any {
+	s := tts.Status()
 	return map[string]any{
-		"available": ok,
-		"message":   msg,
+		"available": s.State == tts.StateReady,
+		"message":   s.Message,
+		"status":    int(s.State),
 	}
 }

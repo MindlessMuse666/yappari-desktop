@@ -83,7 +83,7 @@ declare global {
           ResetDeckProgress: (deckId: number) => Promise<void>
           CheckVoicesAvailability: () => Promise<VoiceStatus>
           SpeakText: (text: string, lang: string) => Promise<{ audio: string; mime: string }>
-          CheckEdgeTTSAvailability: () => Promise<{ available: boolean; message: string }>
+          CheckTTSAvailability: () => Promise<{ available: boolean; message: string; status: number }>
         }
       }
     }

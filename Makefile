@@ -61,10 +61,10 @@ install: fe-install
 	go mod download
 	@echo "✅ Зависимости установлены"
 
-## Установить edge-tts (требуется Python 3 для озвучки)
+## Установить TTS-окружение (Python venv + Silero + Kokoro)
 install-tts:
-	pip install edge-tts
-	@echo "✅ edge-tts установлен"
+	python backend/tts/python/setup_tts.py
+	@echo "✅ TTS-окружение установлено"
 
 ## Установка всего: Go + фронтенд + TTS (первый запуск)
 setup: install install-tts

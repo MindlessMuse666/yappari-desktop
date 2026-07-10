@@ -18,9 +18,6 @@ frontend/dist/
 *.db-shm
 *.db-wal
 
-# документация
-docs/commit-style-guide.md
-
 # среда разработки
 .vscode/
 .idea/
@@ -33,6 +30,9 @@ docs/commit-style-guide.md
 vendor/
 *.log
 *.tmp
+.markdownlint.yml
+.*/
+*.md
 
 # временные файлы TTS
 /tmp/yappari-tts*

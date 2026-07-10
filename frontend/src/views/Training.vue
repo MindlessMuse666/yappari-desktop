@@ -11,7 +11,7 @@
     </div>
 
     <div v-if="isWails && !ttsAvailable" class="tts-warning">
-      Озвучка отключена — не установлен edge-tts
+      Озвучка отключена — не настроено TTS-окружение
     </div>
     <ProgressBar :value="progress" :show-value="false" class="progress-bar" />
 
@@ -132,7 +132,7 @@ import FuriganaText from '../components/FuriganaText.vue'
 import type { TrainingCard as TrainingCardType } from '../types'
 import { useWails } from '../composables/useWails'
 import { useAlert } from '../composables/useAlert'
-import { speakBoth, speakJapanese, speakRussian, checkEdgeTTS } from '../composables/useTts'
+import { speakBoth, speakJapanese, speakRussian, checkTTSAvailability } from '../composables/useTts'
 import { triggerConfetti } from '../utils/confetti'
 
 const router = useRouter()
@@ -173,8 +173,10 @@ const progress = computed(() => {
   return (currentIndex.value / cards.value.length) * 100
 })
 
-/** Флаг: доступен ли TTS (edge-tts установлен) — влияет на кнопки озвучки */
+/** Флаг: доступен ли TTS — влияет на кнопки озвучки */
 const ttsAvailable = ref(true)
+/** Таймер опроса готовности TTS */
+let ttsPollTimer: ReturnType<typeof setInterval> | null = null
 
 /** Флаг: включён ли авто-режим (только свободный режим) */
 const isAutoPlaying = ref(false)
@@ -343,17 +345,30 @@ onMounted(async () => {
   // Проверяем доступность TTS в Wails-режиме
   if (isWails) {
     try {
-      const ttsStatus = await checkEdgeTTS()
+      const ttsStatus = await checkTTSAvailability()
       ttsAvailable.value = ttsStatus.available
       if (!ttsStatus.available) {
-        await alert({
-          title: 'Озвучка недоступна',
-          message:
-            'Для синтеза речи требуется Python и пакет edge-tts.\n\n'
-            + 'Установка: pip install edge-tts\n\n'
-            + 'Без этого кнопки озвучки будут отключены. Основная'
-            + ' функциональность приложения (карточки, повторение) работает без ограничений.',
-        })
+        if (ttsStatus.status === 1) { // StatusInitializing
+          // TTS ещё настраивается (первый запуск)
+          await alert({
+            title: 'Озвучка настраивается',
+            message:
+              'Python-окружение для озвучки устанавливается. '
+              + ttsStatus.message
+              + '\n\nЭто может занять несколько минут при первом запуске. '
+              + 'Озвучка станет доступна автоматически.',
+          })
+          startPollingTTS()
+        } else {
+          await alert({
+            title: 'Озвучка недоступна',
+            message:
+              'TTS-модели не загружены. '
+              + ttsStatus.message
+              + '\n\nПроверьте подключение к интернету при первом запуске. '
+              + 'Основная функциональность приложения работает без ограничений.',
+          })
+        }
       }
     } catch {
       // игнорируем ошибку проверки
@@ -361,9 +376,36 @@ onMounted(async () => {
   }
 })
 
+/** Запускает опрос готовности TTS */
+const startPollingTTS = () => {
+  ttsPollTimer = setInterval(async () => {
+    try {
+      const status = await checkTTSAvailability()
+      if (status.available) {
+        ttsAvailable.value = true
+        if (ttsPollTimer) {
+          clearInterval(ttsPollTimer)
+          ttsPollTimer = null
+        }
+      }
+    } catch {
+      // игнорируем ошибку
+    }
+  }, 5000)
+}
+
+/** Останавливает опрос готовности TTS */
+const stopPollingTTS = () => {
+  if (ttsPollTimer) {
+    clearInterval(ttsPollTimer)
+    ttsPollTimer = null
+  }
+}
+
 onUnmounted(() => {
   document.removeEventListener('keydown', onKeydown)
   stopAutoPlay()
+  stopPollingTTS()
 })
 </script>
 

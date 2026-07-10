@@ -2,7 +2,7 @@
  * Композабл для синтеза речи (Text-To-Speech).
  *
  * Предоставляет единый интерфейс озвучки текста на японском и русском языках.
- * В режиме Wails: вызывает Go-бэкенд (edge-tts).
+ * В режиме Wails: вызывает Go-бэкенд (Silero / Kokoro TTS).
  * В режиме разработки: использует Web Speech API с запасными вариантами.
  *
  * @module composables/useTts
@@ -147,8 +147,8 @@ export const checkVoicesAvailability = async (): Promise<{ Ja: boolean; Ru: bool
  * Произносит указанный текст через TTS-движок (Wails) или Web Speech API.
  *
  * В режиме Wails возвращает объект { audio, mime } от бэкенда:
- * - edge-tts: mime = "audio/mpeg"
- * - Windows TTS: mime = "audio/wav"
+ * - Silero TTS (русский): mime = "audio/wav"
+ * - Kokoro TTS (японский): mime = "audio/wav"
  *
  * В режиме разработки воспроизводит через Web Speech API / Google TTS
  * и возвращает пустой объект (аудио уже сыграно).
@@ -202,15 +202,15 @@ export const speakText = async (text: string, lang: string): Promise<{ audio: st
 }
 
 /**
- * Проверяет доступность edge-tts в системе.
+ * Проверяет доступность TTS в системе.
  *
- * @returns объект с флагом `available` и сообщением
+ * @returns объект с флагом `available`, сообщением и статусом (0-3: uninit, loading, ready, error)
  */
-export const checkEdgeTTS = async (): Promise<{ available: boolean; message: string }> => {
+export const checkTTSAvailability = async (): Promise<{ available: boolean; message: string; status: number }> => {
   if (isWails) {
-    return window.go!.main.App.CheckEdgeTTSAvailability()
+    return window.go!.main.App.CheckTTSAvailability()
   }
-  return { available: false, message: 'Режим разработки (без Wails)' }
+  return { available: false, message: 'Режим разработки (без Wails)', status: 3 }
 }
 
 /**
@@ -244,7 +244,7 @@ export const speakJapanese = async (text: string): Promise<void> => {
       const { alert } = useAlert()
       await alert({
         title: 'Ошибка озвучки',
-        message: 'Не удалось воспроизвести японскую озвучку. Установите edge-tts (pip install edge-tts) или языковой пакет японского в Windows.',
+        message: 'Не удалось воспроизвести японскую озвучку. TTS-модели не загружены. Проверьте подключение к интернету при первом запуске.',
       })
     }
   }
@@ -265,7 +265,7 @@ export const speakRussian = async (text: string): Promise<void> => {
       const { alert } = useAlert()
       await alert({
         title: 'Ошибка озвучки',
-        message: 'Не удалось воспроизвести русскую озвучку. Установите edge-tts (pip install edge-tts) или языковой пакет русского в Windows.',
+        message: 'Не удалось воспроизвести русскую озвучку. TTS-модели не загружены. Проверьте подключение к интернету при первом запуске.',
       })
     }
   }
@@ -290,7 +290,7 @@ export const speakBoth = async (kanjiText: string, translation: string): Promise
       const { alert } = useAlert()
       await alert({
         title: 'Ошибка озвучки',
-        message: 'Не удалось воспроизвести озвучку. Установите edge-tts (pip install edge-tts) или языковой пакет Windows.',
+        message: 'Не удалось воспроизвести озвучку. TTS-модели не загружены. Проверьте подключение к интернету при первом запуске.',
       })
     }
   }
