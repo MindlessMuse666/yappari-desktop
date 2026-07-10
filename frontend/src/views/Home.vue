@@ -131,6 +131,7 @@
       header="Создать колоду"
       class="custom-dialog"
       :closable="false"
+      @show="focusDeckNameInput"
     >
       <div class="form-content" :class="{ shake: shake }">
         <div class="input-group">
@@ -163,7 +164,7 @@
  * @module views/Home
  */
 
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
@@ -240,6 +241,11 @@ const createDeck = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+/** Ставит каретку в поле ввода при открытии модалки */
+const focusDeckNameInput = () => {
+  nextTick(() => document.getElementById('deck-name')?.focus())
 }
 
 /** Закрывает модалку создания колоды и сбрасывает форму */

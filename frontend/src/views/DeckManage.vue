@@ -59,6 +59,7 @@
       :header="editingCard ? 'Редактировать карточку' : 'Новая карточка'"
       class="custom-dialog"
       :closable="false"
+      @show="focusKanjiInput"
     >
       <div class="form-content" :class="{ shake: shake }">
         <div class="input-group">
@@ -115,7 +116,7 @@
  * @module views/DeckManage
  */
 
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
@@ -242,6 +243,11 @@ const validateCardForm = (): boolean => {
   }
 
   return valid
+}
+
+/** Ставит каретку в поле «Японское слово» при открытии модалки */
+const focusKanjiInput = () => {
+  nextTick(() => document.getElementById('kanji-text')?.focus())
 }
 
 /** Открывает форму редактирования карточки */
