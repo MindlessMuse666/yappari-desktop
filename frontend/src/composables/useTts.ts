@@ -144,18 +144,20 @@ export const checkVoicesAvailability = async (): Promise<{ Ja: boolean; Ru: bool
 }
 
 /**
- * Произносит указанный текст через edge-tts (Wails) или Web Speech API.
+ * Произносит указанный текст через TTS-движок (Wails) или Web Speech API.
  *
- * Последовательность работы в режиме разработки:
- * 1. Пробует Web Speech API с подходящим голосом
- * 2. Если голос не найден — Google Translate TTS
- * 3. Если Google не сработал — Web Speech API без голоса
+ * В режиме Wails возвращает объект { audio, mime } от бэкенда:
+ * - edge-tts: mime = "audio/mpeg"
+ * - Windows TTS: mime = "audio/wav"
+ *
+ * В режиме разработки воспроизводит через Web Speech API / Google TTS
+ * и возвращает пустой объект (аудио уже сыграно).
  *
  * @param text - текст для озвучки
  * @param lang - код языка (например, `ja-JP`, `ru-RU`)
- * @returns base64 MP3-строку (в режиме Wails) или пустую строку
+ * @returns объект с base64 аудио и MIME-типом
  */
-export const speakText = async (text: string, lang: string): Promise<string> => {
+export const speakText = async (text: string, lang: string): Promise<{ audio: string; mime: string }> => {
   if (isWails) {
     return window.go!.main.App.SpeakText(text, lang)
   }
@@ -164,7 +166,7 @@ export const speakText = async (text: string, lang: string): Promise<string> => 
   try {
     if (!window.speechSynthesis) {
       console.warn('Web Speech API недоступен')
-      return ''
+      return { audio: '', mime: '' }
     }
 
     window.speechSynthesis.cancel()
@@ -173,13 +175,13 @@ export const speakText = async (text: string, lang: string): Promise<string> => 
     const voice = findVoice(voices, lang)
 
     if (voice) {
-      return new Promise<string>((resolve) => {
+      return new Promise<{ audio: string; mime: string }>((resolve) => {
         const utterance = new SpeechSynthesisUtterance(text)
         utterance.lang = lang
         utterance.rate = 0.9
         utterance.voice = voice
-        utterance.onend = () => resolve('')
-        utterance.onerror = () => resolve('')
+        utterance.onend = () => resolve({ audio: '', mime: '' })
+        utterance.onerror = () => resolve({ audio: '', mime: '' })
         window.speechSynthesis.speak(utterance)
       })
     }
@@ -188,14 +190,14 @@ export const speakText = async (text: string, lang: string): Promise<string> => 
 
     // Запасной: Google TTS
     const ok = await speakWithGoogleTTS(text, lang)
-    if (ok) return ''
+    if (ok) return { audio: '', mime: '' }
 
     // Запасной: Web Speech API без голоса
     await speakWithDefaultVoice(text, lang)
-    return ''
+    return { audio: '', mime: '' }
   } catch (e) {
     console.error(`speakText: критическая ошибка для ${lang}:`, e)
-    return ''
+    return { audio: '', mime: '' }
   }
 }
 
@@ -214,15 +216,16 @@ export const checkEdgeTTS = async (): Promise<{ available: boolean; message: str
 /**
  * Проигрывает base64 аудио через HTML5 Audio API.
  *
- * @param base64 - base64-строка MP3 (может быть пустой, если уже воспроизведено через Web Speech API)
+ * @param audio - base64-строка аудиоданных (может быть пустой, если уже воспроизведено через Web Speech API)
+ * @param mime - MIME-тип аудио ("audio/mpeg" или "audio/wav")
  */
-export const playAudio = (base64: string): Promise<void> => {
-  if (!base64) return Promise.resolve()
+export const playAudio = (audio: string, mime: string): Promise<void> => {
+  if (!audio) return Promise.resolve()
   return new Promise((resolve) => {
-    const audio = new Audio('data:audio/mp3;base64,' + base64)
-    audio.onended = () => resolve()
-    audio.onerror = () => resolve()
-    audio.play().catch(() => resolve())
+    const audioEl = new Audio(`data:${mime};base64,${audio}`)
+    audioEl.onended = () => resolve()
+    audioEl.onerror = () => resolve()
+    audioEl.play().catch(() => resolve())
   })
 }
 
@@ -233,15 +236,15 @@ export const playAudio = (base64: string): Promise<void> => {
  */
 export const speakJapanese = async (text: string): Promise<void> => {
   try {
-    const audio = await speakText(text, 'ja-JP')
-    await playAudio(audio)
+    const result = await speakText(text, 'ja-JP')
+    await playAudio(result.audio, result.mime)
   } catch (e) {
     console.error('Ошибка озвучки (ja):', e)
     if (isWails) {
       const { alert } = useAlert()
       await alert({
         title: 'Ошибка озвучки',
-        message: 'Не удалось воспроизвести японскую озвучку. Убедитесь, что установлен edge-tts (pip install edge-tts).',
+        message: 'Не удалось воспроизвести японскую озвучку. Установите edge-tts (pip install edge-tts) или языковой пакет японского в Windows.',
       })
     }
   }
@@ -254,15 +257,15 @@ export const speakJapanese = async (text: string): Promise<void> => {
  */
 export const speakRussian = async (text: string): Promise<void> => {
   try {
-    const audio = await speakText(text, 'ru-RU')
-    await playAudio(audio)
+    const result = await speakText(text, 'ru-RU')
+    await playAudio(result.audio, result.mime)
   } catch (e) {
     console.error('Ошибка озвучки (ru):', e)
     if (isWails) {
       const { alert } = useAlert()
       await alert({
         title: 'Ошибка озвучки',
-        message: 'Не удалось воспроизвести русскую озвучку. Убедитесь, что установлен edge-tts (pip install edge-tts).',
+        message: 'Не удалось воспроизвести русскую озвучку. Установите edge-tts (pip install edge-tts) или языковой пакет русского в Windows.',
       })
     }
   }
@@ -276,18 +279,18 @@ export const speakRussian = async (text: string): Promise<void> => {
  */
 export const speakBoth = async (kanjiText: string, translation: string): Promise<void> => {
   try {
-    const audioJa = await speakText(kanjiText, 'ja-JP')
-    await playAudio(audioJa)
+    const jaResult = await speakText(kanjiText, 'ja-JP')
+    await playAudio(jaResult.audio, jaResult.mime)
     await new Promise((resolve) => setTimeout(resolve, 500))
-    const audioRu = await speakText(translation, 'ru-RU')
-    await playAudio(audioRu)
+    const ruResult = await speakText(translation, 'ru-RU')
+    await playAudio(ruResult.audio, ruResult.mime)
   } catch (e) {
     console.error('Ошибка озвучки:', e)
     if (isWails) {
       const { alert } = useAlert()
       await alert({
         title: 'Ошибка озвучки',
-        message: 'Не удалось воспроизвести озвучку. Убедитесь, что установлен edge-tts (pip install edge-tts).',
+        message: 'Не удалось воспроизвести озвучку. Установите edge-tts (pip install edge-tts) или языковой пакет Windows.',
       })
     }
   }

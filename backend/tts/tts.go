@@ -1,11 +1,15 @@
-// Пакет tts реализует синтез речи через Microsoft Edge TTS (edge-tts).
+// Пакет tts реализует синтез речи через Microsoft Edge TTS (edge-tts)
+// и встроенный Windows TTS (SAPI через PowerShell).
 //
-// Для работы требуется установленный Python 3.x и пакет edge-tts:
+// Порядок выбора движка:
+//  1. edge-tts (Python) — наилучшее качество, поддержка японского и русского
+//  2. Windows TTS (System.Speech) — fallback, если Python не установлен
 //
+// Для edge-tts требуется установка:
 //	pip install edge-tts
 //
-// Пакет последовательно перебирает способы вызова:
-// edge-tts → python -m edge_tts → python3 -m edge_tts.
+// Windows TTS доступен на Windows Vista+ без дополнительных зависимостей,
+// но требует установленного языкового пакета для нужного языка.
 package tts
 
 import (
@@ -14,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 // voiceFor возвращает имя голоса edge-tts для указанного кода языка.
@@ -82,13 +87,9 @@ func tryInvokeWithOutput(args []string) (bool, string, error) {
 	return false, lastErr.Error(), lastErr
 }
 
-// Speak вызывает edge-tts для синтеза указанного текста на указанном языке.
+// speakEdgeTTS вызывает edge-tts для синтеза указанного текста.
 // Возвращает MP3-аудио в виде среза байт.
-//
-// Параметры:
-//   - text — текст для озвучивания
-//   - lang — код языка ("ja" для японского, "ru" для русского)
-func Speak(text, lang string) ([]byte, error) {
+func speakEdgeTTS(text, lang string) ([]byte, error) {
 	voice := voiceFor(lang)
 
 	tmpDir, err := os.MkdirTemp("", "yappari-tts")
@@ -117,13 +118,136 @@ func Speak(text, lang string) ([]byte, error) {
 	return data, nil
 }
 
-// CheckAvailability проверяет, доступен ли edge-tts в системе.
+// speakWindowsTTS вызывает встроенный Windows TTS (System.Speech) через PowerShell.
+// Возвращает WAV-аудио в виде среза байт.
+//
+// Использует PowerShell-скрипт, который:
+//  1. Загружает сборку System.Speech
+//  2. Ищет установленный голос по коду языка (ja-JP / ru-RU)
+//  3. Синтезирует речь в WAV-файл
+//
+// Текст передаётся через временный файл, чтобы избежать проблем с экранированием.
+func speakWindowsTTS(text, lang string) ([]byte, error) {
+	tmpDir, err := os.MkdirTemp("", "yappari-tts")
+	if err != nil {
+		return nil, fmt.Errorf("Windows TTS: не удалось создать временную папку: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	outPath := filepath.Join(tmpDir, "speak.wav")
+	textPath := filepath.Join(tmpDir, "text.txt")
+	scriptPath := filepath.Join(tmpDir, "speak.ps1")
+
+	// Пишем текст во временный файл (UTF-8 без BOM)
+	if err := os.WriteFile(textPath, []byte(text), 0644); err != nil {
+		return nil, fmt.Errorf("Windows TTS: не удалось записать текст: %w", err)
+	}
+
+	// Приводим язык к формату Windows: ja-JP, ru-RU
+	culture := strings.ReplaceAll(lang, "_", "-")
+
+	// PowerShell-скрипт: ищет голос по культуре, синтезирует речь в WAV
+	psScript := fmt.Sprintf(`
+$text = Get-Content '%s' -Raw -Encoding UTF8
+Add-Type -AssemblyName System.Speech
+$s = New-Object System.Speech.Synthesis.SpeechSynthesizer
+$voice = $s.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -eq '%s' } | Select-Object -First 1
+if ($voice -ne $null) { $s.SelectVoice($voice.VoiceInfo.Name) }
+$s.SetOutputToWaveFile('%s')
+$s.Speak([string]$text)
+$s.Dispose()
+`, textPath, culture, outPath)
+
+	if err := os.WriteFile(scriptPath, []byte(psScript), 0644); err != nil {
+		return nil, fmt.Errorf("Windows TTS: не удалось записать скрипт: %w", err)
+	}
+
+	cmd := exec.Command("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("Windows TTS: %s", strings.TrimSpace(stderr.String()))
+	}
+
+	data, err := os.ReadFile(outPath)
+	if err != nil {
+		return nil, fmt.Errorf("Windows TTS: не удалось прочитать аудиофайл: %w", err)
+	}
+
+	return data, nil
+}
+
+// Speak вызывает синтез речи, последовательно перебирая доступные движки:
+//
+//  1. edge-tts (Python) — MP3
+//  2. Windows TTS (System.Speech) — WAV
+//
+// Возвращает аудиоданные, MIME-тип и ошибку.
+//
+// Параметры:
+//   - text — текст для озвучивания
+//   - lang — код языка ("ja" для японского, "ru" для русского)
+func Speak(text, lang string) ([]byte, string, error) {
+	// Попытка 1: edge-tts (наилучшее качество)
+	data, err := speakEdgeTTS(text, lang)
+	if err == nil {
+		return data, "audio/mpeg", nil
+	}
+
+	// Попытка 2: Windows TTS (fallback)
+	data, err = speakWindowsTTS(text, lang)
+	if err == nil {
+		return data, "audio/wav", nil
+	}
+
+	return nil, "",
+		fmt.Errorf("TTS недоступен. Установите edge-tts (pip install edge-tts)")
+}
+
+// checkWindowsTTSAvailability проверяет, доступен ли Windows TTS для указанного языка.
+func checkWindowsTTSAvailability(lang string) (bool, string) {
+	culture := strings.ReplaceAll(lang, "_", "-")
+
+	psScript := fmt.Sprintf(`
+Add-Type -AssemblyName System.Speech
+$s = New-Object System.Speech.Synthesis.SpeechSynthesizer
+$voice = $s.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -eq '%s' } | Select-Object -First 1
+if ($voice -ne $null) { $true } else { $false }
+`, culture)
+
+	cmd := exec.Command("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", psScript)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return false, strings.TrimSpace(stderr.String())
+	}
+
+	result := strings.TrimSpace(stdout.String())
+	if result == "True" {
+		return true, fmt.Sprintf("Windows TTS доступен для %s", culture)
+	}
+	return false, fmt.Sprintf("Windows TTS: голос для %s не найден", culture)
+}
+
+// CheckAvailability проверяет, доступен ли хотя бы один движок синтеза речи.
 // Возвращает признак доступности и информационное сообщение.
 func CheckAvailability() (bool, string) {
-	ok, msg, err := tryInvokeWithOutput([]string{"--list-voices"})
-	if ok {
+	// Проверка 1: edge-tts
+	if ok, _, _ := tryInvokeWithOutput([]string{"--list-voices"}); ok {
 		return true, "edge-tts доступен"
 	}
-	_ = msg
-	return false, fmt.Sprintf("edge-tts не найден. Установите: pip install edge-tts\n  %s", err)
+
+	// Проверка 2: Windows TTS (хотя бы для одного из целевых языков)
+	for _, lang := range []string{"ja-JP", "ru-RU"} {
+		if ok, msg := checkWindowsTTSAvailability(lang); ok {
+			return true, msg
+		}
+	}
+
+	return false,
+		"TTS недоступен. Установите edge-tts (pip install edge-tts) " +
+			"или языковой пакет для японского/русского в Windows"
 }

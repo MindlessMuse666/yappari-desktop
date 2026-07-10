@@ -10,17 +10,20 @@
       </div>
     </div>
 
+    <div v-if="isWails && !ttsAvailable" class="tts-warning">
+      Озвучка отключена — не установлен edge-tts
+    </div>
     <ProgressBar :value="progress" :show-value="false" class="progress-bar" />
 
     <div v-if="currentCard && !isFinished" class="card-container">
       <div class="card" :class="{ flipped: showAnswer }" :key="currentCard.ID">
         <div class="card-inner">
           <div class="card-front">
-            <div class="text" @click="speakJapaneseOnly">{{ currentCard.KanjiText }}</div>
+            <div class="text" :class="{ 'tts-disabled': isWails && !ttsAvailable }" @click="speakJapaneseOnly">{{ currentCard.KanjiText }}</div>
           </div>
           <div class="card-back">
             <div class="word-section">
-              <div class="text clickable" @click="speakJapaneseOnly">
+              <div class="text clickable" :class="{ 'tts-disabled': isWails && !ttsAvailable }" @click="speakJapaneseOnly">
                 <FuriganaText
                   :KanjiText="currentCard.KanjiText"
                   :FuriganaText="currentCard.FuriganaText"
@@ -29,7 +32,7 @@
             </div>
             <div class="separator"></div>
             <div class="translation-section">
-              <div class="text clickable" @click="speakRussianOnly">{{ currentCard.Translation }}</div>
+              <div class="text clickable" :class="{ 'tts-disabled': isWails && !ttsAvailable }" @click="speakRussianOnly">{{ currentCard.Translation }}</div>
             </div>
           </div>
         </div>
@@ -170,6 +173,9 @@ const progress = computed(() => {
   return (currentIndex.value / cards.value.length) * 100
 })
 
+/** Флаг: доступен ли TTS (edge-tts установлен) — влияет на кнопки озвучки */
+const ttsAvailable = ref(true)
+
 /** Флаг: включён ли авто-режим (только свободный режим) */
 const isAutoPlaying = ref(false)
 let lazyTimer: ReturnType<typeof setTimeout> | null = null
@@ -214,6 +220,7 @@ const showAnswerFn = () => {
 
 /** Озвучка только японского текста */
 const speakJapaneseOnly = () => {
+  if (!ttsAvailable.value && isWails) return
   if (currentCard.value) {
     speakJapanese(currentCard.value.KanjiText)
   }
@@ -221,6 +228,7 @@ const speakJapaneseOnly = () => {
 
 /** Озвучка только русского перевода */
 const speakRussianOnly = () => {
+  if (!ttsAvailable.value && isWails) return
   if (currentCard.value) {
     speakRussian(currentCard.value.Translation)
   }
@@ -336,8 +344,16 @@ onMounted(async () => {
   if (isWails) {
     try {
       const ttsStatus = await checkEdgeTTS()
+      ttsAvailable.value = ttsStatus.available
       if (!ttsStatus.available) {
-        console.warn('edge-tts недоступен:', ttsStatus.message)
+        await alert({
+          title: 'Озвучка недоступна',
+          message:
+            'Для синтеза речи требуется Python и пакет edge-tts.\n\n'
+            + 'Установка: pip install edge-tts\n\n'
+            + 'Без этого кнопки озвучки будут отключены. Основная'
+            + ' функциональность приложения (карточки, повторение) работает без ограничений.',
+        })
       }
     } catch {
       // игнорируем ошибку проверки
@@ -481,6 +497,18 @@ onUnmounted(() => {
 
 .text.clickable:hover {
   background-position: -100% 0;
+}
+
+.text.clickable.tts-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-image: none !important;
+  -webkit-text-fill-color: #555555 !important;
+}
+
+.text.tts-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .word-section,
@@ -718,6 +746,17 @@ onUnmounted(() => {
 
 .icon {
   font-size: 1.25rem;
+}
+
+.tts-warning {
+  background: #1a1a1a;
+  border: 1px solid #333333;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #c7cdd8;
 }
 
 .go-home-btn {

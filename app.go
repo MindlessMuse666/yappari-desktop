@@ -115,17 +115,22 @@ func (a *App) CheckVoicesAvailability() database.VoiceStatus {
 
 // ---- Синтез речи ----
 
-// SpeakText синтезирует речь через edge-tts. Принимает текст и код языка,
-// возвращает аудио в виде base64-строки (MP3).
-func (a *App) SpeakText(text string, lang string) (string, error) {
-	data, err := tts.Speak(text, lang)
+// SpeakText синтезирует речь через доступный TTS-движок.
+// Приоритет: edge-tts (MP3) → Windows TTS (WAV).
+// Возвращает карту с полями "audio" (base64) и "mime" (MIME-тип).
+func (a *App) SpeakText(text string, lang string) (map[string]any, error) {
+	data, mimeType, err := tts.Speak(text, lang)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return base64.StdEncoding.EncodeToString(data), nil
+	return map[string]any{
+		"audio": base64.StdEncoding.EncodeToString(data),
+		"mime":  mimeType,
+	}, nil
 }
 
-// CheckEdgeTTSAvailability проверяет, установлен ли edge-tts в системе.
+// CheckEdgeTTSAvailability проверяет доступность синтеза речи в системе.
+// Проверяет все доступные движки: edge-tts, Windows TTS.
 // Возвращает карту с полями "available" (bool) и "message" (string).
 func (a *App) CheckEdgeTTSAvailability() map[string]any {
 	ok, msg := tts.CheckAvailability()
