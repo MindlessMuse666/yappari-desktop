@@ -1,10 +1,12 @@
 services:
   - type: web
     name: yappari
-    env: docker
+    runtime: image
     repo: https://github.com/MindlessMuse666/yappari
     branch: web
     plan: free
+    autoDeploy: true
+    healthCheckPath: /api/health
     envVars:
       - key: JWT_SECRET
         generateValue: true

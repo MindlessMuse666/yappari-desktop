@@ -39,6 +39,11 @@ func main() {
 		api.POST("/auth/register", handlers.Register)
 		api.POST("/auth/login", handlers.Login)
 
+		// Health check (публичный)
+		api.GET("/health", func(c *gin.Context) {
+			c.JSON(200, gin.H{"status": "ok"})
+		})
+
 		// TTS статус (публичный)
 		api.GET("/tts/status", handlers.TTSStatus)
 
