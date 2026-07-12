@@ -24,30 +24,60 @@
 >
 > Есть также **веб-версия** приложения (Go + Vue + TypeScript + CSS): [yappari-web](https://github.com/MindlessMuse666/yappari-web)
 
-<details open>
-   <summary><b>Нажмите, чтобы скрыть/показать скриншоты</b></summary>
-   <table>
-     <tr>
-       <td align="center"><img src="docs/screenshots/main_view.png" alt="Главная страница" width="350"><br><sub><i>Рис 1. Главная страница: выбор колод и режима</i></sub></td>
-       <td align="center"><img src="docs/screenshots/deck_manage_view.png" alt="Управление колодой" width="350"><br><sub><i>Рис 2. Управление колодой: просмотр и редактирование</i></sub></td>
-     </tr>
-     <tr>
-       <td align="center"><img src="docs/screenshots/traning_mode_view.png" alt="Режим тренировки" width="350"><br><sub><i>Рис 3. Интервальное повторение: оценка карточки</i></sub></td>
-       <td align="center"><img src="docs/screenshots/free_mode_view.png" alt="Свободный режим" width="350"><br><sub><i>Рис 4. Свободный режим: автовоспроизведение</i></sub></td>
-     </tr>
-     <tr>
-       <td colspan="2" align="center">
-         <b>Модальные окна:</b><br><br>
-         <img src="docs/screenshots/modal_views/create_deck_modal.png" alt="Создание колоды" width="200">
-         <img src="docs/screenshots/modal_views/create_card_modal.png" alt="Создание карточки" width="200">
-         <img src="docs/screenshots/modal_views/delete_deck_modal.png" alt="Удаление колоды" width="200">
-         <img src="docs/screenshots/modal_views/delete_card_modal.png" alt="Удаление карточки" width="200">
-         <img src="docs/screenshots/modal_views/reset_progress_modal.png" alt="Сброс прогресса" width="200">
-         <br><sub><i>Рис 5. Модальные окна: создание, удаление, сброс</i></sub>
-       </td>
-     </tr>
-   </table>
+---
+
+## Скриншоты
+
+### 🏠 Основной вид
+
+<p align="left">
+  <img src="docs/screenshots/main_view.png" alt="Главная страница со списком колод" width="800" />
+</p>
+
+### 🗂️ Управление колодой
+
+<p align="left">
+  <img src="docs/screenshots/deck_manage_view.png" alt="Управление карточками в колоде" width="800" />
+</p>
+
+<details>
+<summary>📋 Модальные окна (создание / редактирование / удаление)</summary>
+
+<br/>
+
+| Создание колоды | Создание карточки | Редактирование карточки |
+| --- | --- | --- |
+| <img src="docs/screenshots/modal_views/create_deck_modal.png" alt="Создание колоды" width="260" /> | <img src="docs/screenshots/modal_views/create_card_modal.png" alt="Создание карточки" width="260" /> | <img src="docs/screenshots/modal_views/patch_card_modal.png" alt="Редактирование карточки" width="260" /> |
+
+| Удаление колоды | Удаление карточки | Сброс прогресса |
+| --- | --- | --- |
+| <img src="docs/screenshots/modal_views/delete_deck_modal.png" alt="Удаление колоды" width="260" /> | <img src="docs/screenshots/modal_views/delete_card_modal.png" alt="Удаление карточки" width="260" /> | <img src="docs/screenshots/modal_views/reset_progress_modal.png" alt="Сброс прогресса" width="260" /> |
+
 </details>
+
+### 🎲 Свободный режим
+
+Листай карточки без расписания — просто для повторения или запоминания.
+
+<p align="left">
+  <img src="docs/screenshots/free_mode_view_1.png" alt="Свободный режим — вид 1" width="380" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/free_mode_view_2.png" alt="Свободный режим — вид 2" width="380" />
+</p>
+
+### 🧠 Тренировка (SM-2)
+
+Интервальное повторение с оценкой сложности. Карточки подбираются по расписанию алгоритма SM-2.
+
+<p align="left">
+  <img src="docs/screenshots/traning_mode_view_1.png" alt="Тренировка — вид 1" width="380" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/traning_mode_view_2.png" alt="Тренировка — вид 2" width="380" />
+</p>
+
+<p align="left">
+  <img src="docs/screenshots/success_training.png" alt="Успешное завершение тренировки" width="500" />
+</p>
 
 ---
 
