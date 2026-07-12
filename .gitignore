@@ -34,8 +34,6 @@ frontend/dist/
 vendor/
 *.log
 *.tmp
-.*/
-*.md
 
 # временные файлы TTS
 /tmp/yappari-tts*
