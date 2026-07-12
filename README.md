@@ -38,31 +38,62 @@
 
 ## Скриншоты
 
-> *Скриншоты будут добавлены позже.*
+### 🏠 Основной вид
+
+<p align="left">
+  <img src="docs/screenshots/main_view.png" alt="Главная страница со списком колод" width="800" />
+</p>
+
+---
+
+### 🗂️ Управление колодой
+
+<p align="left">
+  <img src="docs/screenshots/deck_manage_view.png" alt="Управление карточками в колоде" width="800" />
+</p>
 
 <details>
-<summary>Главная страница / Список колод</summary>
+<summary>📋 Модальные окна (создание / редактирование / удаление)</summary>
 
-<!-- TODO: добавить скриншот главной страницы -->
+<br/>
+
+| Создание колоды | Создание карточки | Редактирование карточки |
+| --- | --- | --- |
+| <img src="docs/screenshots/modal_views/create_deck_modal.png" alt="Создание колоды" width="260" /> | <img src="docs/screenshots/modal_views/create_card_modal.png" alt="Создание карточки" width="260" /> | <img src="docs/screenshots/modal_views/patch_card_modal.png" alt="Редактирование карточки" width="260" /> |
+
+| Удаление колоды | Удаление карточки | Сброс прогресса |
+| --- | --- | --- |
+| <img src="docs/screenshots/modal_views/delete_deck_modal.png" alt="Удаление колоды" width="260" /> | <img src="docs/screenshots/modal_views/delete_card_modal.png" alt="Удаление карточки" width="260" /> | <img src="docs/screenshots/modal_views/reset_progress_modal.png" alt="Сброс прогресса" width="260" /> |
+
 </details>
 
-<details>
-<summary>Управление колодой (CRUD карточек)</summary>
+---
 
-<!-- TODO: добавить скриншот управления колодой -->
-</details>
+### 🎲 Свободный режим
 
-<details>
-<summary>Тренировка (флип-карточки)</summary>
+Листай карточки без расписания — просто для повторения или запоминания.
 
-<!-- TODO: добавить скриншот тренировки -->
-</details>
+<p align="left">
+  <img src="docs/screenshots/free_mode_view_1.png" alt="Свободный режим — вид 1" width="380" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/free_mode_view_2.png" alt="Свободный режим — вид 2" width="380" />
+</p>
 
-<details>
-<summary>Авторизация (вход / регистрация)</summary>
+---
 
-<!-- TODO: добавить скриншот логина -->
-</details>
+### 🧠 Тренировка (SM-2)
+
+Интервальное повторение с оценкой сложности. Карточки подбираются по расписанию алгоритма SM-2.
+
+<p align="left">
+  <img src="docs/screenshots/traning_mode_view_1.png" alt="Тренировка — вид 1" width="380" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/traning_mode_view_2.png" alt="Тренировка — вид 2" width="380" />
+</p>
+
+<p align="left">
+  <img src="docs/screenshots/success_training.png" alt="Успешное завершение тренировки" width="500" />
+</p>
 
 ---
 
